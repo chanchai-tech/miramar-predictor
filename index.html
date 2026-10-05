@@ -37,8 +37,8 @@
         const map = L.map('map', { crs: L.CRS.Simple, minZoom: -4, maxZoom: 2, zoomControl: true });
         const bounds = [[0, 0], [8000, 8000]];
         
-        // บรรทัดที่แก้ไข: ดึงรูปภาพจาก GitHub ของ PUBG โดยตรง
-        L.imageOverlay('https://github.com/chanchai-tech/miramar-predictor/releases/download/map/Miramar_Main_High_Res.png', bounds).addTo(map);
+        
+        L.imageOverlay ('https://github.com/chanchai-tech/miramar-predictor/releases/download/map/Miramar_Main_High_Res.png', bounds).addTo(map);
         map.fitBounds(bounds);
 
         let drawnLayers = [];
