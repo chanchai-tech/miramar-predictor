@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PUBG Mobile - Miramar Predictor</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        body { margin: 0; padding: 0; display: flex; flex-direction: column; height: 100vh; background-color: #1e1e1e; color: white; font-family: sans-serif;}
+        #toolbar { padding: 15px; background: #2d2d2d; display: flex; gap: 15px; align-items: center; z-index: 1000; flex-wrap: wrap;}
+        #map { flex-grow: 1; background: #111; cursor: crosshair; }
+        select, button { padding: 8px 12px; font-size: 14px; border-radius: 4px; border: none; cursor: pointer; font-weight: bold;}
+        .btn-normal { background: #3498db; color: white; }
+        .btn-simulate { background: #e74c3c; color: white; }
+    </style>
+</head>
+<body>
+    <div id="toolbar">
+        <label>เริ่มจาก:</label>
+        <select id="phaseSelect">
+            <option value="1">Phase 1 (2250m)</option>
+            <option value="2">Phase 2 (1500m)</option>
+            <option value="3">Phase 3 (1000m)</option>
+            <option value="4">Phase 4 (500m)</option>
+        </select>
+        <button class="btn-normal" onclick="mode = 'single'">ดูวงถัดไป</button>
+        <button class="btn-simulate" onclick="mode = 'full'">สุ่มถึงวงสุดท้าย</button>
+        <button style="background:#7f8c8d; color:white;" onclick="clearMap()">ล้างหน้าจอ</button>
+    </div>
+    <div id="map"></div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        const phaseRadii = { 1: 2250, 2: 1500, 3: 1000, 4: 500, 5: 250, 6: 125, 7: 65, 8: 30 };
+        const phaseColors = { 1: '#ffffff', 2: '#00a8ff', 3: '#9c88ff', 4: '#fbc531', 5: '#e1b12c', 6: '#e84118', 7: '#c23616', 8: '#ff0000' };
+        
+        const map = L.map('map', { crs: L.CRS.Simple, minZoom: -4, maxZoom: 2, zoomControl: true });
+        const bounds = [[0, 0], [8000, 8000]];
+        
+        // บรรทัดที่แก้ไข: ดึงรูปภาพจาก GitHub ของ PUBG โดยตรง
+        L.imageOverlay('https://raw.githubusercontent.com/pubg/api-assets/master/Assets/Maps/Miramar_Main_High_Res.png', bounds).addTo(map);
+        map.fitBounds(bounds);
+
+        let drawnLayers = [];
+        let mode = 'single';
+
+        function getRandomCenter(currentCenter, validRadius) {
+            const angle = Math.random() * 2 * Math.PI;
+            const r = validRadius * Math.sqrt(Math.random());
+            const dx = r * Math.cos(angle);
+            const dy = r * Math.sin(angle);
+            return L.latLng(currentCenter.lat + dy, currentCenter.lng + dx);
+        }
+
+        map.on('click', function(e) {
+            clearMap();
+            let currentCenter = e.latlng;
+            let startPhase = parseInt(document.getElementById('phaseSelect').value);
+            
+            if (mode === 'single') {
+                let currentRadius = phaseRadii[startPhase];
+                let nextRadius = phaseRadii[startPhase + 1];
+                let validRadius = currentRadius - nextRadius;
+
+                drawnLayers.push(L.circle(currentCenter, { color: '#3498db', weight: 2, fillOpacity: 0.1, radius: currentRadius }).addTo(map));
+                drawnLayers.push(L.circle(currentCenter, { color: '#e74c3c', weight: 2, dashArray: '5,5', fillOpacity: 0.3, radius: validRadius }).addTo(map));
+            
+            } else if (mode === 'full') {
+                for (let phase = startPhase; phase <= 8; phase++) {
+                    let radius = phaseRadii[phase];
+                    let circle = L.circle(currentCenter, {
+                        color: phaseColors[phase], weight: 2, fillColor: phaseColors[phase], fillOpacity: 0.05, radius: radius
+                    }).addTo(map);
+                    drawnLayers.push(circle);
+
+                    if (phase < 8) {
+                        currentCenter = getRandomCenter(currentCenter, radius - phaseRadii[phase + 1]);
+                    }
+                }
+            }
+        });
+
+        function clearMap() {
+            drawnLayers.forEach(layer => map.removeLayer(layer));
+            drawnLayers = [];
+        }
+    </script>
+</body>
+</html>
